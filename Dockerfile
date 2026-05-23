@@ -26,8 +26,5 @@ EXPOSE 2222 2323 8080
 ENV SISYPHUSGATE_CONFIG=/app/config/docker.yaml
 ENV PYTHONUNBUFFERED=1
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=10 \
-    CMD python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('127.0.0.1',2222)); s.close()" || exit 1
-
 ENTRYPOINT ["python", "-m", "sisyphusgate"]
 CMD ["run"]

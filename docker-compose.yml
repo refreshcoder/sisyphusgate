@@ -4,9 +4,9 @@ services:
     container_name: sisyphusgate
     restart: unless-stopped
     ports:
-      - "${SISYPHUSGATE_SSH_PORT:-2222}:2222"
-      - "${SISYPHUSGATE_TELNET_PORT:-2323}:2323"
-      - "${SISYPHUSGATE_HTTP_PORT:-8080}:8080"
+      - "2222:2222"
+      - "2323:2323"
+      - "8080:8080"
     volumes:
       - ${SISYPHUSGATE_BASE:-.}/logs/sisyphusgate:/app/logs
       - ${SISYPHUSGATE_BASE:-.}/data:/app/data
@@ -14,16 +14,13 @@ services:
     environment:
       - SISYPHUSGATE_CONFIG=/app/config/docker.yaml
       - SISYPHUSGATE_LOG_LEVEL=${SISYPHUSGATE_LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
     depends_on:
-      cowrie:
-        condition: service_started
-      endlessh:
-        condition: service_started
+      - cowrie
+      - endlessh
     networks:
       - default
       - honeynet
-    security_opt:
-      - no-new-privileges:true
     deploy:
       resources:
         limits:
@@ -42,8 +39,6 @@ services:
       - /cowrie/cowrie-git/var/lib/cowrie
     networks:
       - honeynet
-    security_opt:
-      - no-new-privileges:true
     deploy:
       resources:
         limits:
@@ -59,50 +54,12 @@ services:
       - ENDLESSH_MAX_CLIENTS=${TARPIT_MAX_CLIENTS:-4096}
     networks:
       - honeynet
-    security_opt:
-      - no-new-privileges:true
     deploy:
       resources:
         limits:
           cpus: '0.25'
           memory: 64M
 
-  snare:
-    image: mushorg/snare:latest
-    container_name: sisyphusgate-snare
-    restart: "no"
-    environment:
-      - TANNER_HOST=http://tanner:8090
-    depends_on:
-      - tanner
-    tmpfs:
-      - /tmp
-    networks:
-      - honeynet
-    security_opt:
-      - no-new-privileges:true
-    profiles:
-      - http_honeypot
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-
-  tanner:
-    image: mushorg/tanner:latest
-    container_name: sisyphusgate-tanner
-    restart: "no"
-    tmpfs:
-      - /tmp
-    networks:
-      - honeynet
-    security_opt:
-      - no-new-privileges:true
-    profiles:
-      - http_honeypot
-
 networks:
   honeynet:
     driver: bridge
-    internal: true
