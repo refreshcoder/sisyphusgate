@@ -16,7 +16,7 @@ services:
       - SISYPHUSGATE_LOG_LEVEL=${SISYPHUSGATE_LOG_LEVEL:-INFO}
     depends_on:
       cowrie:
-        condition: service_healthy
+        condition: service_started
       endlessh:
         condition: service_started
     networks:
@@ -51,10 +51,10 @@ services:
           memory: 256M
     healthcheck:
       test: ["CMD", "python3", "-c", "import socket; s=socket.socket(); s.settimeout(3); s.connect(('127.0.0.1',2222)); s.close()"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   endlessh:
     image: shizunge/endlessh-go:latest
