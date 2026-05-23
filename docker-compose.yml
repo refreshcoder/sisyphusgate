@@ -1,14 +1,6 @@
 services:
   sisyphusgate:
-    image: ${SISYPHUSGATE_IMAGE:-ghcr.io/sisyphusgate/sisyphusgate:latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        PYTHON_VERSION: "3.11-slim"
-        BUILD_DATE: ${BUILD_DATE:-}
-        VCS_REF: ${VCS_REF:-}
-        VERSION: ${VERSION:-0.1.0}
+    image: ${SISYPHUSGATE_IMAGE:-ghcr.io/refreshcoder/sisyphusgate:latest}
     container_name: sisyphusgate
     restart: unless-stopped
     ports:
