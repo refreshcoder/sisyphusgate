@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import signal
 from typing import Any
 
 from sisyphusgate.aggregator.collector import EventCollector
@@ -11,10 +10,6 @@ from sisyphusgate.aggregator.storage import JSONLStorage, SQLiteStorage, Storage
 from sisyphusgate.analyzer.engine import AnalysisEngine
 from sisyphusgate.config import (
     AppConfig,
-    CowrieExternalConfig,
-    EndlesshExternalConfig,
-    ExternalHoneypotConfig,
-    SnareExternalConfig,
     load_config,
 )
 from sisyphusgate.gateway.server import GatewayServer

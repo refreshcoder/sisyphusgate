@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 import time
-from typing import Any, Callable
+from typing import Callable
 
 from sisyphusgate.utils.logging import get_logger
 
@@ -87,7 +87,7 @@ class LogBridge:
             self._file_positions[path] = current_size
 
         lines = data.strip().split("\n")
-        return [l for l in lines if l.strip()]
+        return [ln for ln in lines if ln.strip()]
 
     async def _process_line(self, source: str, line: str) -> None:
         if not self._publish:

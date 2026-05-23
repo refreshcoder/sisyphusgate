@@ -57,7 +57,6 @@ class JSONLStorage(StorageBackend):
         with open(filepath, "a") as f:
             f.write(lines)
 
-        count = len(self._buffer)
         self._buffer.clear()
         self._last_flush = time.time()
 
@@ -139,8 +138,6 @@ class SQLiteStorage(StorageBackend):
             return
 
         conn = self._get_conn()
-        timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-
         for event in self._buffer:
             event_type = event.get("event_type", "unknown")
             source_ip = event.get("source_ip", "")

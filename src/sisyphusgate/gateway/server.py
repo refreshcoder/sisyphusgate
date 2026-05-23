@@ -5,7 +5,7 @@ import signal
 from typing import Callable, Optional
 
 from sisyphusgate.config import GatewayConfig, PortConfig
-from sisyphusgate.gateway.protocol import Protocol, detect_protocol
+from sisyphusgate.gateway.protocol import detect_protocol
 from sisyphusgate.gateway.session import Session, SessionState
 from sisyphusgate.utils.logging import get_logger
 

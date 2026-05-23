@@ -3,9 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
-import socket
 import subprocess
-import time
 
 from sisyphusgate.config import CowrieExternalConfig, EndlesshExternalConfig, SnareExternalConfig
 from sisyphusgate.utils.logging import get_logger

@@ -6,7 +6,7 @@ from sisyphusgate.analyzer.engine import AnalysisResult
 from sisyphusgate.config import RouterConfig, RouteRule as ConfigRouteRule, RouteCondition as ConfigRouteCondition
 from sisyphusgate.router.dispatcher import HoneypotRouter
 from sisyphusgate.router.rate_limiter import RateLimiter
-from sisyphusgate.router.rules import ActionType, RouteDecision
+from sisyphusgate.router.rules import ActionType
 
 
 class TestRateLimiter:

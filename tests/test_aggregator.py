@@ -34,7 +34,7 @@ class TestStorage:
         import os
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            storage = JSONLStorage(output_path=tmpdir, flush_interval=1)
+            _ = JSONLStorage(output_path=tmpdir, flush_interval=1)
             assert os.path.exists(tmpdir)
 
 
