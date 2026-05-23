@@ -1,10 +1,6 @@
 name: Build & Push Docker Image
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main, develop]
   push:
     branches: [main, develop]
     tags:
@@ -30,7 +26,6 @@ jobs:
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_run' && github.event.conclusion == 'success' || github.event_name != 'workflow_run'
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
       annotations: ${{ steps.meta.outputs.annotations }}
@@ -62,8 +57,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=
 
-      - name: Build and push (main branch)
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      - name: Build and push (main branch/tags)
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -76,13 +71,12 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-      - name: Build only (develop/PR - no push)
-        if: github.ref != 'refs/heads/main' || github.event_name == 'pull_request'
+      - name: Build only (develop/PR)
+        if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')
         uses: docker/build-push-action@v6
         with:
           context: .
           push: false
-          load: true
           tags: ${{ steps.meta.outputs.tags }}
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha,scope=sisyphusgate
@@ -90,6 +84,7 @@ jobs:
           platforms: linux/amd64
 
       - name: Run Trivy vulnerability scanner
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
@@ -100,6 +95,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy results
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
