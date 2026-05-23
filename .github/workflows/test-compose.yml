@@ -53,7 +53,7 @@ jobs:
         run: |
           echo "=== Creating directories ==="
           mkdir -p logs/sisyphusgate logs/cowrie data config/cowrie/etc
-          
+
           if [ ! -f config/cowrie/etc/cowrie.cfg ]; then
             echo "Creating cowrie.cfg..."
             cat > config/cowrie/etc/cowrie.cfg << 'EOF'
@@ -73,12 +73,9 @@ enabled = true
 logfile = /cowrie/cowrie-git/var/log/cowrie/cowrie.json
 EOF
           fi
-          
+
           echo "Directory structure:"
           ls -la
-          echo ""
-          echo "cowrie.cfg content:"
-          cat config/cowrie/etc/cowrie.cfg
 
       - name: Start Docker Compose
         id: compose-start
@@ -100,23 +97,23 @@ EOF
         id: periodic-checks
         run: |
           echo "=== Periodic Health & Port Checks ==="
-          
+
           healthy_count=0
           total_checks=6
-          
+
           for i in $(seq 1 $total_checks); do
             echo ""
             echo "========================================="
             echo "CHECK $i/$total_checks (waiting ${i}0 seconds)"
             echo "========================================="
-            
+
             sleep 10
-            
+
             # Check compose status
             echo ""
             echo "--- Compose Status ---"
             docker compose ps
-            
+
             # Check each service
             echo ""
             echo "--- Service Details ---"
@@ -125,7 +122,7 @@ EOF
                 status=$(docker inspect --format='{{.State.Status}}' "$service")
                 health=$(docker inspect --format='{{.State.Health.Status}}' "$service" 2>/dev/null || echo "none")
                 echo "$service: status=$status, health=$health"
-                
+
                 if [ "$status" = "running" ]; then
                   ((healthy_count++))
                 fi
@@ -133,11 +130,11 @@ EOF
                 echo "$service: NOT FOUND"
               fi
             done
-            
+
             # Check ports availability
             echo ""
             echo "--- Port Checks ---"
-            
+
             # Check SSH port (2222)
             echo -n "Port 2222 (SSH): "
             if timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/2222' 2>/dev/null; then
@@ -145,7 +142,7 @@ EOF
             else
               echo "❌ CLOSED"
             fi
-            
+
             # Check Telnet port (2323)
             echo -n "Port 2323 (Telnet): "
             if timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/2323' 2>/dev/null; then
@@ -153,7 +150,7 @@ EOF
             else
               echo "❌ CLOSED"
             fi
-            
+
             # Check HTTP port (8080)
             echo -n "Port 8080 (HTTP): "
             if timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' 2>/dev/null; then
@@ -161,18 +158,18 @@ EOF
             else
               echo "❌ CLOSED"
             fi
-            
+
             # Quick logs check
             echo ""
             echo "--- Recent SisyphusGate Logs ---"
             docker compose logs sisyphusgate --no-color --tail=5 2>&1 | tail -5
-            
+
           done
-          
+
           echo ""
           echo "=== Check Summary ==="
           echo "Healthy services seen: $healthy_count"
-          
+
           # Count final running services
           final_running=0
           for service in sisyphusgate sisyphusgate-cowrie sisyphusgate-endlessh; do
@@ -181,7 +178,7 @@ EOF
             fi
           done
           echo "Final running services: $final_running/3"
-          
+
           echo "healthy_count=$healthy_count" >> $GITHUB_OUTPUT
           echo "final_running=$final_running" >> $GITHUB_OUTPUT
 
@@ -190,23 +187,23 @@ EOF
         run: |
           echo "=== FINAL COMPREHENSIVE HEALTH CHECK ==="
           echo ""
-          
+
           services=("sisyphusgate" "sisyphusgate-cowrie" "sisyphusgate-endlessh")
           healthy_count=0
           total_count=${#services[@]}
-          
+
           for service in "${services[@]}"; do
             echo ""
             echo "=== $service ==="
-            
+
             if docker inspect "$service" >/dev/null 2>&1; then
               status=$(docker inspect --format='{{.State.Status}}' "$service")
               health=$(docker inspect --format='{{.State.Health.Status}}' "$service" 2>/dev/null || echo "none")
-              
+
               echo "Status: $status"
               echo "Health: $health"
               echo "Started: $(docker inspect --format='{{.State.StartedAt}}' "$service")"
-              
+
               if [ "$status" = "running" ]; then
                 ((healthy_count++))
                 echo "✅ $service is RUNNING"
@@ -220,48 +217,49 @@ EOF
               echo "❌ Container does not exist"
             fi
           done
-          
+
           echo ""
           echo "=== FINAL SUMMARY ==="
           echo "$healthy_count/$total_count services healthy"
-          
+
           echo "healthy_count=$healthy_count" >> $GITHUB_OUTPUT
           echo "total_count=$total_count" >> $GITHUB_OUTPUT
 
       - name: Port availability test
+        id: port-check
         run: |
           echo "=== PORT AVAILABILITY TEST ==="
-          
+
           ports_ok=0
           total_ports=3
-          
+
           # Test SSH port
           echo -n "SSH (2222): "
           if timeout 3 bash -c 'cat < /dev/null > /dev/tcp/localhost/2222' 2>/dev/null; then
             echo "✅ AVAILABLE"
-            ((ports_ok++))
+            ports_ok=$((ports_ok + 1))
           else
             echo "❌ NOT AVAILABLE"
           fi
-          
+
           # Test Telnet port
           echo -n "Telnet (2323): "
           if timeout 3 bash -c 'cat < /dev/null > /dev/tcp/localhost/2323' 2>/dev/null; then
             echo "✅ AVAILABLE"
-            ((ports_ok++))
+            ports_ok=$((ports_ok + 1))
           else
             echo "❌ NOT AVAILABLE"
           fi
-          
+
           # Test HTTP port
           echo -n "HTTP (8080): "
           if timeout 3 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' 2>/dev/null; then
             echo "✅ AVAILABLE"
-            ((ports_ok++))
+            ports_ok=$((ports_ok + 1))
           else
             echo "❌ NOT AVAILABLE"
           fi
-          
+
           echo ""
           echo "$ports_ok/$total_ports ports available"
           echo "ports_ok=$ports_ok" >> $GITHUB_OUTPUT
@@ -297,15 +295,15 @@ EOF
           echo "========================================"
           echo "DETAILED SERVICE LOGS"
           echo "========================================"
-          
+
           echo ""
           echo "===== SisyphusGate (Full) ====="
           docker logs sisyphusgate 2>&1 || echo "Container not found or not accessible"
-          
+
           echo ""
           echo "===== Cowrie (Last 50 lines) ====="
           docker logs sisyphusgate-cowrie 2>&1 | tail -50 || echo "Container not found or not accessible"
-          
+
           echo ""
           echo "===== Endlessh (Last 30 lines) ====="
           docker logs sisyphusgate-endlessh 2>&1 | tail -30 || echo "Container not found or not accessible"
@@ -326,29 +324,29 @@ EOF
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Test Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Service health
           final_healthy=${{ steps.final-check.outputs.healthy_count }}
           final_total=${{ steps.final-check.outputs.total_count }}
-          
+
           echo "### 📊 Service Health" >> $GITHUB_STEP_SUMMARY
           echo "- Healthy Services: **$final_healthy/$final_total**" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "$final_healthy" -eq "$final_total" ]; then
             echo "✅ **All services running correctly!**" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ **Some services have issues** - Check logs above" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Port availability
-          ports_ok=${{ steps.port-availability-test.outputs.ports_ok }}
-          total_ports=${{ steps.port-availability-test.outputs.total_ports }}
-          
+          ports_ok=${{ steps.port-check.outputs.ports_ok }}
+          total_ports=${{ steps.port-check.outputs.total_ports }}
+
           echo "### 🌐 Port Availability" >> $GITHUB_STEP_SUMMARY
           echo "- Open Ports: **$ports_ok/$total_ports**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Recommendations
           echo "### 📋 Recommendations" >> $GITHUB_STEP_SUMMARY
           if [ "$final_healthy" -eq "$final_total" ] && [ "$ports_ok" -eq "$total_ports" ]; then
@@ -359,6 +357,6 @@ EOF
             echo "3. Check network configuration" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "*Test generated by GitHub Actions* " >> $GITHUB_STEP_SUMMARY
