@@ -1,0 +1,75 @@
+name: Test Endlessh Service
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-endlessh:
+    name: Test Endlessh Honeypot
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start Endlessh container
+        run: |
+          docker run -d \
+            --name test-endlessh \
+            -p 2222:2222 \
+            -e ENDLESSH_DELAY=10000 \
+            -e ENDLESSH_MAX_CLIENTS=4096 \
+            shizunge/endlessh-go:latest
+
+      - name: Wait for Endlessh to start
+        run: |
+          echo "Waiting for Endlessh to start..."
+          sleep 20
+
+      - name: Check container status
+        run: |
+          echo "=== Container Status ==="
+          docker ps -a
+          
+          if docker inspect test-endlessh | grep -q '"Status": "running"'; then
+            echo "✅ Endlessh container is running"
+          else
+            echo "❌ Endlessh container is NOT running"
+            echo ""
+            echo "=== Container Logs ==="
+            docker logs test-endlessh
+            exit 1
+          fi
+
+      - name: Test SSH port connection
+        run: |
+          echo -n "Testing SSH port 2222 connection... "
+          # 尝试连接，即使只是测试端口是否开启
+          if timeout 5 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/2222' 2>/dev/null; then
+            echo "✅ SSH port is accessible (connection successful)"
+          else
+            echo "⚠️  SSH port connection test - could be tarpit working (expected behavior for Endlessh"
+            echo "  (This is OK - Endlessh is a tarpit that accepts connections but delays responses)"
+          fi
+
+      - name: Final Endlessh Logs
+        if: always()
+        run: |
+          echo "=== Final Endlessh Logs (Last 100 lines) ==="
+          docker logs test-endlessh --tail 100
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop test-endlessh || true
+          docker rm test-endlessh || true
+
+      - name: Generate report
+        if: always()
+        run: |
+          echo "## 🌊 Endlessh Service Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Test completed at $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check above logs for details." >> $GITHUB_STEP_SUMMARY

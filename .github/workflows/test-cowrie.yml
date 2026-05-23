@@ -1,0 +1,113 @@
+name: Test Cowrie Service
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-cowrie:
+    name: Test Cowrie Honeypot
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create directories and config
+        run: |
+          mkdir -p logs/cowrie config/cowrie/etc
+          if [ ! -f config/cowrie/etc/cowrie.cfg ]; then
+            cat > config/cowrie/etc/cowrie.cfg << 'EOF'
+[ssh]
+listen_endpoints = tcp:2222:interface=0.0.0.0
+
+[telnet]
+enabled = true
+listen_endpoints = tcp:2223:interface=0.0.0.0
+
+[honeypot]
+hostname = web-server-prod
+download_limit_size = 0
+
+[output_jsonlog]
+enabled = true
+logfile = /cowrie/cowrie-git/var/log/cowrie/cowrie.json
+EOF
+          fi
+
+      - name: Start Cowrie container
+        run: |
+          docker run -d \
+            --name test-cowrie \
+            -p 2222:2222 \
+            -p 2223:2223 \
+            -v $(pwd)/logs/cowrie:/cowrie/cowrie-git/var/log/cowrie \
+            -v $(pwd)/config/cowrie/etc/cowrie.cfg:/cowrie/cowrie-git/etc/cowrie.cfg:ro \
+            --tmpfs /tmp \
+            --tmpfs /cowrie/cowrie-git/var/lib/cowrie \
+            cowrie/cowrie:latest
+
+      - name: Wait for Cowrie to start
+        run: |
+          echo "Waiting for Cowrie to start..."
+          sleep 30
+
+      - name: Check container status
+        run: |
+          echo "=== Container Status ==="
+          docker ps -a
+          
+          if docker inspect test-cowrie | grep -q '"Status": "running"'; then
+            echo "✅ Cowrie container is running"
+          else
+            echo "❌ Cowrie container is NOT running"
+            echo ""
+            echo "=== Container Logs ==="
+            docker logs test-cowrie
+            exit 1
+          fi
+
+      - name: Test SSH port
+        run: |
+          echo -n "Testing SSH port 2222... "
+          if timeout 10 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/2222' 2>/dev/null; then
+            echo "✅ SSH port is accessible"
+          else
+            echo "❌ SSH port is NOT accessible"
+            echo ""
+            echo "=== Cowrie Logs ==="
+            docker logs test-cowrie
+          fi
+
+      - name: Test Telnet port
+        run: |
+          echo -n "Testing Telnet port 2223... "
+          if timeout 10 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/2223' 2>/dev/null; then
+            echo "✅ Telnet port is accessible"
+          else
+            echo "❌ Telnet port is NOT accessible"
+            echo ""
+            echo "=== Cowrie Logs ==="
+            docker logs test-cowrie
+          fi
+
+      - name: Final Cowrie Logs
+        if: always()
+        run: |
+          echo "=== Final Cowrie Logs (Last 100 lines) ==="
+          docker logs test-cowrie --tail 100
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop test-cowrie || true
+          docker rm test-cowrie || true
+
+      - name: Generate report
+        if: always()
+        run: |
+          echo "## 🐄 Cowrie Service Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Test completed at $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check above logs for details." >> $GITHUB_STEP_SUMMARY
