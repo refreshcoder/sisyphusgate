@@ -38,24 +38,67 @@ jobs:
           docker pull cowrie/cowrie:latest
           docker pull shizunge/endlessh-go:latest
 
+      - name: Create required directories
+        run: |
+          mkdir -p logs/sisyphusgate logs/cowrie data config/cowrie/etc
+          if [ ! -f config/cowrie/etc/cowrie.cfg ]; then
+            echo "[ssh]" > config/cowrie/etc/cowrie.cfg
+            echo "listen_endpoints = tcp:2222:interface=0.0.0.0" >> config/cowrie/etc/cowrie.cfg
+            echo "" >> config/cowrie/etc/cowrie.cfg
+            echo "[telnet]" >> config/cowrie/etc/cowrie.cfg
+            echo "enabled = true" >> config/cowrie/etc/cowrie.cfg
+            echo "listen_endpoints = tcp:2223:interface=0.0.0.0" >> config/cowrie/etc/cowrie.cfg
+            echo "" >> config/cowrie/etc/cowrie.cfg
+            echo "[honeypot]" >> config/cowrie/etc/cowrie.cfg
+            echo "hostname = web-server-prod" >> config/cowrie/etc/cowrie.cfg
+            echo "download_limit_size = 0" >> config/cowrie/etc/cowrie.cfg
+            echo "" >> config/cowrie/etc/cowrie.cfg
+            echo "[output_jsonlog]" >> config/cowrie/etc/cowrie.cfg
+            echo "enabled = true" >> config/cowrie/etc/cowrie.cfg
+            echo "logfile = /cowrie/cowrie-git/var/log/cowrie/cowrie.json" >> config/cowrie/etc/cowrie.cfg
+          fi
+          ls -la
+
       - name: Start Docker Compose
         run: |
+          echo "Starting Docker Compose..."
           docker compose up -d
           echo "Services starting..."
 
-      - name: Wait for services to initialize
+      - name: Check containers immediately after start
         run: |
-          sleep 30
-          echo "Waiting for services to be ready..."
-
-      - name: Check service status
-        id: status
-        run: |
-          echo "=== Docker Compose Status ==="
-          docker compose ps
+          sleep 5
+          echo "=== Immediate container status ==="
+          docker compose ps -a
           
           echo ""
-          echo "=== Checking service health ==="
+          echo "=== Container logs (immediate) ==="
+          docker compose logs sisyphusgate --no-color 2>&1 | head -50 || echo "No logs yet"
+
+      - name: Wait and check periodically
+        run: |
+          for i in {1..6}; do
+            echo ""
+            echo "=== Check ${i}/6 (waiting 10s) ==="
+            sleep 10
+            
+            echo "--- Compose status ---"
+            docker compose ps
+            
+            echo ""
+            echo "--- SisyphusGate logs ---"
+            docker compose logs sisyphusgate --no-color --tail=30 2>&1
+            
+            echo ""
+            echo "--- Cowrie logs ---"
+            docker compose logs cowrie --no-color --tail=30 2>&1
+          done
+
+      - name: Final service health check
+        id: status
+        run: |
+          echo ""
+          echo "=== Final Service Health Check ==="
           
           # Check each service
           services=("sisyphusgate" "sisyphusgate-cowrie" "sisyphusgate-endlessh")
@@ -66,24 +109,30 @@ jobs:
             echo ""
             echo "Checking $service..."
             
-            # Check if container is running
-            status=$(docker inspect --format='{{.State.Status}}' "$service" 2>/dev/null || echo "unknown")
-            echo "Status: $status"
-            
-            if [ "$status" = "running" ]; then
-              # Check health if healthcheck is defined
-              health=$(docker inspect --format='{{.State.Health.Status}}' "$service" 2>/dev/null || echo "no-healthcheck")
-              echo "Health: $health"
+            # Check if container exists and is running
+            if docker inspect "$service" >/dev/null 2>&1; then
+              status=$(docker inspect --format='{{.State.Status}}' "$service")
+              echo "Status: $status"
               
-              if [ "$health" = "healthy" ] || [ "$health" = "no-healthcheck" ]; then
-                echo "✅ $service is healthy"
-                ((healthy_count++))
+              if [ "$status" = "running" ]; then
+                # Check health if healthcheck is defined
+                health=$(docker inspect --format='{{.State.Health.Status}}' "$service" 2>/dev/null || echo "no-healthcheck")
+                echo "Health: $health"
+                
+                if [ "$health" = "healthy" ] || [ "$health" = "no-healthcheck" ]; then
+                  echo "✅ $service is healthy"
+                  ((healthy_count++))
+                else
+                  echo "⚠️ $service health status: $health"
+                fi
               else
-                echo "⚠️ $service health status: $health"
+                echo "❌ $service is not running"
+                echo ""
+                echo "Logs for $service:"
+                docker logs "$service" 2>&1
               fi
             else
-              echo "❌ $service is not running"
-              docker logs "$service" 2>/dev/null | head -20
+              echo "❌ $service container does not exist"
             fi
           done
           
@@ -95,19 +144,29 @@ jobs:
           echo "healthy_count=$healthy_count" >> $GITHUB_OUTPUT
           echo "total_count=$total_count" >> $GITHUB_OUTPUT
 
-      - name: Collect logs
+      - name: Collect full logs
         if: always()
         run: |
-          echo "=== SisyphusGate Logs ==="
-          docker logs sisyphusgate 2>/dev/null || echo "Container not found"
+          echo ""
+          echo "===================="
+          echo "FULL SERVICE LOGS"
+          echo "===================="
           
           echo ""
-          echo "=== Cowrie Logs ==="
-          docker logs sisyphusgate-cowrie 2>/dev/null || echo "Container not found"
+          echo "===== SisyphusGate Logs ====="
+          docker logs sisyphusgate 2>&1 || echo "Container not found"
           
           echo ""
-          echo "=== Endlessh Logs ==="
-          docker logs sisyphusgate-endlessh 2>/dev/null || echo "Container not found"
+          echo "===== Cowrie Logs ====="
+          docker logs sisyphusgate-cowrie 2>&1 || echo "Container not found"
+          
+          echo ""
+          echo "===== Endlessh Logs ====="
+          docker logs sisyphusgate-endlessh 2>&1 || echo "Container not found"
+          
+          echo ""
+          echo "===== Docker Events ====="
+          docker events --since 5m --until now 2>&1 | head -50
 
       - name: Check ports
         if: steps.status.outputs.healthy_count > 0

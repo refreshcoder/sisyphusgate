@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sisyphusgate"
-version = "0.1.1"
+version = "0.1.3"
 description = "A modular honeypot system for malicious traffic detection, analysis, routing, and data aggregation"
 readme = "README.md"
 requires-python = ">=3.11"
