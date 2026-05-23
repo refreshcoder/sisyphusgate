@@ -1,0 +1,124 @@
+{
+  "/": {
+    "type": "dir",
+    "children": {
+      "bin": {
+        "type": "dir",
+        "children": {
+          "ls": {"type": "file", "content": "ELF binary"},
+          "bash": {"type": "file", "content": "ELF binary"},
+          "cat": {"type": "file", "content": "ELF binary"},
+          "wget": {"type": "file", "content": "ELF binary"},
+          "curl": {"type": "file", "content": "ELF binary"},
+          "python3": {"type": "file", "content": "ELF binary"},
+          "perl": {"type": "file", "content": "ELF binary"}
+        }
+      },
+      "etc": {
+        "type": "dir",
+        "children": {
+          "passwd": {
+            "type": "file",
+            "content": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nmysql:x:105:111:MySQL Server:/nonexistent:/bin/false\n"
+          },
+          "shadow": {
+            "type": "file",
+            "content": "root:$6$randomsalt$hashhere:19000:0:99999:7:::\ndaemon:*:19000:0:99999:7:::\nwww-data:*:19000:0:99999:7:::\n"
+          },
+          "hostname": {
+            "type": "file",
+            "content": "web-server-prod\n"
+          },
+          "issue.net": {
+            "type": "file",
+            "content": "Ubuntu 22.04.3 LTS\n"
+          },
+          "motd": {
+            "type": "file",
+            "content": "Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)\n\n * Documentation:  https://help.ubuntu.com\n * Management:     https://landscape.canonical.com\n * Support:        https://ubuntu.com/advantage\n\n"
+          }
+        }
+      },
+      "home": {
+        "type": "dir",
+        "children": {
+          "ubuntu": {
+            "type": "dir",
+            "children": {
+              ".ssh": {
+                "type": "dir",
+                "children": {
+                  "authorized_keys": {
+                    "type": "file",
+                    "content": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... admin@workstation\n"
+                  }
+                }
+              },
+              ".bash_history": {
+                "type": "file",
+                "content": "ls -la\ncd /var/www\ncat config.php\nmysql -u root -p\nexit\n"
+              },
+              "backup.sh": {
+                "type": "file",
+                "content": "#!/bin/bash\ntar -czf /tmp/backup-$(date +%Y%m%d).tar.gz /var/www\n"
+              }
+            }
+          }
+        }
+      },
+      "var": {
+        "type": "dir",
+        "children": {
+          "www": {
+            "type": "dir",
+            "children": {
+              "html": {
+                "type": "dir",
+                "children": {
+                  "index.html": {
+                    "type": "file",
+                    "content": "<html><body><h1>It works!</h1></body></html>\n"
+                  },
+                  "config.php": {
+                    "type": "file",
+                    "content": "<?php\n$db_host = 'localhost';\n$db_user = 'webapp';\n$db_pass = 'P@ssw0rd123';\n$db_name = 'production';\n?>\n"
+                  }
+                }
+              }
+            }
+          },
+          "log": {
+            "type": "dir",
+            "children": {
+              "auth.log": {
+                "type": "file",
+                "content": "May 21 08:32:15 web-server sshd[1234]: Accepted publickey for ubuntu from 10.0.0.5 port 54321\nMay 21 08:45:22 web-server sshd[1235]: Failed password for root from 203.0.113.42 port 12345\n"
+              },
+              "syslog": {
+                "type": "file",
+                "content": "May 21 08:00:01 web-server CRON[1000]: (root) CMD (cd /var/www && php artisan schedule:run)\n"
+              }
+            }
+          }
+        }
+      },
+      "tmp": {
+        "type": "dir",
+        "children": {}
+      },
+      "root": {
+        "type": "dir",
+        "children": {}
+      },
+      "proc": {
+        "type": "dir",
+        "children": {
+          "cpuinfo": {
+            "type": "file",
+            "content": "processor\t: 0\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 85\nmodel name\t: Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz\n"
+          }
+        }
+      }
+    }
+  }
+}

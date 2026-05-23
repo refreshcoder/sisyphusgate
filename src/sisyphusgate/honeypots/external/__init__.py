@@ -1,0 +1,1 @@
+"""External honeypot integration module - manages mature honeypot services."""

@@ -1,0 +1,131 @@
+sisyphusgate:
+  gateway:
+    bind_address: "0.0.0.0"
+    ports:
+      - port: 2222
+        protocol: ssh
+      - port: 2323
+        protocol: telnet
+      - port: 8080
+        protocol: http
+    max_connections: 10000
+    connection_timeout: 300
+
+  analyzer:
+    enable_signatures: true
+    enable_frequency: true
+    enable_heuristics: true
+    frequency:
+      window_seconds: 60
+      threshold: 10
+    threat_thresholds:
+      low: 0
+      medium: 30
+      high: 60
+      critical: 85
+
+  router:
+    rules:
+      - name: "高频SSH攻击 -> Endlessh"
+        priority: 100
+        conditions:
+          - type: protocol_match
+            value: ssh
+          - type: frequency_threshold
+            value: 10
+        action: route_to_external
+        target: endlessh
+      - name: "恶意SSH流量 -> Cowrie"
+        priority: 85
+        conditions:
+          - type: protocol_match
+            value: ssh
+          - type: score_threshold
+            value: 30
+        action: route_to_external
+        target: cowrie
+      - name: "恶意Telnet流量 -> Cowrie"
+        priority: 84
+        conditions:
+          - type: protocol_match
+            value: telnet
+          - type: score_threshold
+            value: 30
+        action: route_to_external
+        target: cowrie
+      - name: "恶意HTTP流量 -> SNARE"
+        priority: 80
+        conditions:
+          - type: protocol_match
+            value: http
+          - type: score_threshold
+            value: 30
+        action: route_to_external
+        target: snare
+      - name: "高频恶意流量 -> 通用Tarpit"
+        priority: 95
+        conditions:
+          - type: frequency_threshold
+            value: 15
+        action: route_to_tarpit
+        target: tarpit
+      - name: "IP黑名单 -> Endlessh"
+        priority: 90
+        conditions:
+          - type: ip_match
+            value: "blacklist"
+        action: route_to_external
+        target: endlessh
+      - name: "默认 -> 仅记录"
+        priority: 0
+        conditions: []
+        action: log_only
+    ip_blacklist: []
+    ip_whitelist: []
+
+  honeypots:
+    tarpit:
+      enabled: true
+      delay_ms: 10000
+      max_line_length: 64
+      max_clients: 4096
+      protocol: "raw"
+
+  external_honeypots:
+    cowrie:
+      enabled: true
+      mode: docker
+      host: "cowrie"
+      ssh_port: 2222
+      telnet_port: 2223
+      docker_image: "cowrie/cowrie:latest"
+      config_path: "/app/config/cowrie/"
+      log_path: "/cowrie-logs/cowrie.json"
+    endlessh:
+      enabled: true
+      mode: docker
+      host: "endlessh"
+      internal_port: 2222
+      docker_image: "shizunge/endlessh-go:latest"
+      delay_ms: 10000
+      max_clients: 4096
+    snare:
+      enabled: false
+      mode: docker
+      host: "snare"
+      internal_port: 8080
+      docker_image: "mushorg/snare:latest"
+      tanner_host: "http://tanner:8090"
+
+  aggregator:
+    storage_backend: "jsonl"
+    jsonl_path: "/app/logs/"
+    sqlite_path: "/app/data/sisyphusgate.db"
+    geoip_db_path: "/app/data/GeoLite2-City.mmdb"
+    event_queue_size: 10000
+    flush_interval: 5
+
+  logging:
+    level: "INFO"
+    format: "json"
+    output: "/app/logs/sisyphusgate.log"

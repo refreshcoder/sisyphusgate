@@ -1,0 +1,45 @@
+name: Security Vulnerability
+
+description: Report a security vulnerability (see our security policy)
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **Do NOT report security vulnerabilities through public GitHub Issues.**
+
+        Please follow our security policy and contact us directly.
+
+        We appreciate your responsible disclosure.
+
+  - type: input
+    id: cve
+    attributes:
+      label: CVE ID (if applicable)
+      description: If this vulnerability has a CVE ID
+      placeholder: e.g. CVE-YYYY-XXXXX
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Vulnerability Description
+      description: Detailed description of the vulnerability
+      placeholder: Describe the security issue...
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact Assessment
+      description: What is the potential impact?
+      placeholder: Who is affected and how?
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: Steps to reproduce (for maintainer review only)
+      placeholder: |
+        1. ...
+        2. ...

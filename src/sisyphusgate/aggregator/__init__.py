@@ -1,0 +1,1 @@
+"""Data aggregation and reporting module."""
