@@ -16,9 +16,9 @@ services:
       - "${SISYPHUSGATE_TELNET_PORT:-2323}:2323"
       - "${SISYPHUSGATE_HTTP_PORT:-8080}:8080"
     volumes:
-      - sisyphusgate-logs:/app/logs
-      - sisyphusgate-data:/app/data
-      - cowrie-logs:/cowrie-logs:ro
+      - ${SISYPHUSGATE_BASE:-.}/logs/sisyphusgate:/app/logs
+      - ${SISYPHUSGATE_BASE:-.}/data:/app/data
+      - ${SISYPHUSGATE_BASE:-.}/logs/cowrie:/cowrie-logs:ro
     environment:
       - SISYPHUSGATE_CONFIG=/app/config/docker.yaml
       - SISYPHUSGATE_LOG_LEVEL=${SISYPHUSGATE_LOG_LEVEL:-INFO}
@@ -43,8 +43,8 @@ services:
     container_name: sisyphusgate-cowrie
     restart: unless-stopped
     volumes:
-      - cowrie-logs:/cowrie/cowrie-git/var/log/cowrie
-      - ./config/cowrie/etc:/cowrie/cowrie-git/etc:ro
+      - ${SISYPHUSGATE_BASE:-.}/logs/cowrie:/cowrie/cowrie-git/var/log/cowrie
+      - ${SISYPHUSGATE_BASE:-.}/config/cowrie/etc:/cowrie/cowrie-git/etc:ro
     read_only: true
     tmpfs:
       - /tmp
@@ -123,11 +123,3 @@ networks:
   honeynet:
     driver: bridge
     internal: true
-
-volumes:
-  sisyphusgate-logs:
-    driver: local
-  sisyphusgate-data:
-    driver: local
-  cowrie-logs:
-    driver: local
