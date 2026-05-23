@@ -45,11 +45,10 @@ jobs:
       - name: Test SSH port connection
         run: |
           echo -n "Testing SSH port 2222 connection... "
-          # 尝试连接，即使只是测试端口是否开启
           if timeout 5 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/2222' 2>/dev/null; then
             echo "✅ SSH port is accessible (connection successful)"
           else
-            echo "⚠️  SSH port connection test - could be tarpit working (expected behavior for Endlessh"
+            echo "⚠️  SSH port connection test - could be tarpit working (expected behavior for Endlessh)"
             echo "  (This is OK - Endlessh is a tarpit that accepts connections but delays responses)"
           fi
 
