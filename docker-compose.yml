@@ -36,10 +36,11 @@ services:
     restart: unless-stopped
     volumes:
       - ${SISYPHUSGATE_BASE:-.}/logs/cowrie:/cowrie/cowrie-git/var/log/cowrie
-      - ${SISYPHUSGATE_BASE:-.}/config/cowrie/etc:/cowrie/cowrie-git/etc:ro
+      - ${SISYPHUSGATE_BASE:-.}/config/cowrie/etc/cowrie.cfg:/cowrie/cowrie-git/etc/cowrie.cfg:ro
     read_only: true
     tmpfs:
       - /tmp
+      - /cowrie/cowrie-git/var/lib/cowrie
     networks:
       - honeynet
     security_opt:

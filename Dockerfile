@@ -9,9 +9,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 COPY pyproject.toml .
 COPY src/ src/
 
-RUN pip install --no-cache-dir -e . \
-    && find /usr/local/lib/python3.11/site-packages -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true \
-    && find /usr/local/lib/python3.11/site-packages -type d -name '*.dist-info' -not -name 'sisyphusgate*' -not -name 'pip*' -exec find {} -name 'RECORD' -delete \; 2>/dev/null || true
+RUN pip install --no-cache-dir .
 
 FROM python:${PYTHON_VERSION} AS runtime
 
