@@ -48,7 +48,6 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-      - /cowrie/cowrie-git/var/log/cowrie
     networks:
       - honeynet
     security_opt:
