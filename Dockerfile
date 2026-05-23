@@ -17,20 +17,20 @@ FROM python:${PYTHON_VERSION} AS runtime
 
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION=0.1.0
+ARG VERSION=0.1.1
 
 LABEL org.opencontainers.image.title="SisyphusGate" \
       org.opencontainers.description="Modular honeypot system for malicious traffic detection, analysis, routing and data aggregation" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.authors="SisyphusGate Team" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.source="https://github.com/sisyphusgate/sisyphusgate" \
+      org.opencontainers.image.source="https://github.com/refreshcoder/sisyphusgate" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.base.name="docker.io/library/python:${PYTHON_VERSION}" \
       org.opencontainers.image.ref.name="sisyphusgate" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.vendor="SisyphusGate" \
-      org.opencontainers.image.documentation="https://github.com/sisyphusgate/sisyphusgate#readme"
+      org.opencontainers.image.documentation="https://github.com/refreshcoder/sisyphusgate#readme"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \

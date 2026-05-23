@@ -55,18 +55,18 @@ SisyphusGate 采用**"智能编排 + 成熟蜜罐"**混合架构：
 
 ```bash
 # 一行命令启动完整架构（amd64 / arm64 均支持）
-docker compose -f https://raw.githubusercontent.com/sisyphusgate/sisyphusgate/main/docker-compose.yml up -d
+docker compose -f https://raw.githubusercontent.com/refreshcoder/sisyphusgate/main/docker-compose.yml up -d
 
 # 或下载到本地后修改配置
-curl -O https://raw.githubusercontent.com/sisyphusgate/sisyphusgate/main/docker-compose.yml
-curl -O https://raw.githubusercontent.com/sisyphusgate/sisyphusgate/main/.env
+curl -O https://raw.githubusercontent.com/refreshcoder/sisyphusgate/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/refreshcoder/sisyphusgate/main/.env
 docker compose up -d
 ```
 
 ### 方式二：Docker Compose 一键部署（本地构建）
 
 ```bash
-git clone https://github.com/sisyphusgate/sisyphusgate.git
+git clone https://github.com/refreshcoder/sisyphusgate.git
 cd sisyphusgate
 
 # 一键启动整个服务架构（SisyphusGate + Cowrie + Endlessh）
@@ -108,7 +108,7 @@ TARPIT_DELAY_MS=10000
 - 操作系统：Linux
 
 ```bash
-git clone https://github.com/sisyphusgate/sisyphusgate.git
+git clone https://github.com/refreshcoder/sisyphusgate.git
 cd sisyphusgate
 
 # 安装 Python 包
@@ -292,13 +292,13 @@ sisyphusgate geoip-update           # 更新 GeoIP 数据库
 
 ```bash
 # 拉取最新镜像
-docker pull ghcr.io/sisyphusgate/sisyphusgate:latest
+docker pull ghcr.io/refreshcoder/sisyphusgate:latest
 
 # 拉取特定版本
-docker pull ghcr.io/sisyphusgate/sisyphusgate:v0.1.0
+docker pull ghcr.io/refreshcoder/sisyphusgate:v0.1.1
 
 # 指定版本（major.minor）
-docker pull ghcr.io/sisyphusgate/sisyphusgate:0.1
+docker pull ghcr.io/refreshcoder/sisyphusgate:0.1
 ```
 
 镜像标签策略：
