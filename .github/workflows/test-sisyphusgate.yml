@@ -1,0 +1,126 @@
+name: Test SisyphusGate Service
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  SISYPHUSGATE_IMAGE: ghcr.io/${{ github.repository_owner }}/sisyphusgate:latest
+
+jobs:
+  test-sisyphusgate:
+    name: Test SisyphusGate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull and inspect image
+        run: |
+          echo "=== Pulling SisyphusGate image ==="
+          docker pull ${{ env.SISYPHUSGATE_IMAGE }}
+          echo ""
+          echo "=== Image layers ==="
+          docker history ${{ env.SISYPHUSGATE_IMAGE }} --no-trunc
+          echo ""
+          echo "=== Image info ==="
+          docker inspect ${{ env.SISYPHUSGATE_IMAGE }}
+
+      - name: Create required directories
+        run: |
+          mkdir -p logs/sisyphusgate logs/cowrie data config/cowrie/etc
+          
+          if [ ! -f config/cowrie/etc/cowrie.cfg ]; then
+            printf '[ssh]\nlisten_endpoints = tcp:2222:interface=0.0.0.0\n\n[telnet]\nenabled = true\nlisten_endpoints = tcp:2223:interface=0.0.0.0\n\n[honeypot]\nhostname = web-server-prod\ndownload_limit_size = 0\n\n[output_jsonlog]\nenabled = true\nlogfile = /cowrie/cowrie-git/var/log/cowrie/cowrie.json\n' > config/cowrie/etc/cowrie.cfg
+          fi
+
+      - name: Start SisyphusGate container (simple mode)
+        run: |
+          echo "=== Starting SisyphusGate in simple mode ==="
+          docker run -d \
+            --name test-sisyphusgate \
+            -p 2222:2222 \
+            -p 2323:2323 \
+            -p 8080:8080 \
+            -v $(pwd)/logs/sisyphusgate:/app/logs \
+            -v $(pwd)/data:/app/data \
+            -v $(pwd)/logs/cowrie:/cowrie-logs:ro \
+            -e SISYPHUSGATE_CONFIG=/app/config/docker.yaml \
+            -e SISYPHUSGATE_LOG_LEVEL=DEBUG \
+            ${{ env.SISYPHUSGATE_IMAGE }}
+
+      - name: Wait and monitor
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            echo ""
+            echo "=== Check $i/10 - $(date) ==="
+            
+            echo "--- Container Status ---"
+            docker ps -a
+            
+            if docker inspect test-sisyphusgate >/dev/null 2>&1; then
+              status=$(docker inspect --format='{{.State.Status}}' test-sisyphusgate)
+              echo "Status: $status"
+              
+              if [ "$status" = "running" ]; then
+                echo "--- Recent Logs ---"
+                docker logs test-sisyphusgate --tail 30
+              else
+                echo "--- Full Logs ---"
+                docker logs test-sisyphusgate
+              fi
+            else
+              echo "Container not found"
+            fi
+            
+            echo "--- Port Check ---"
+            echo -n "Port 2222: "
+            if timeout 2 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/2222' 2>/dev/null; then
+              echo "✅ OPEN"
+            else
+              echo "❌ CLOSED"
+            fi
+            
+            if [ "$status" = "running" ]; then
+              echo "Container is running, continuing to monitor..."
+            fi
+            
+            echo "Waiting 10 seconds..."
+            sleep 10
+          done
+
+      - name: Final status
+        if: always()
+        run: |
+          echo ""
+          echo "=== FINAL DIAGNOSTICS ==="
+          
+          if docker inspect test-sisyphusgate >/dev/null 2>&1; then
+            echo ""
+            echo "Container info:"
+            docker inspect test-sisyphusgate --format='Status: {{.State.Status}}'
+            docker inspect test-sisyphusgate --format='Exit Code: {{.State.ExitCode}}'
+            docker inspect test-sisyphusgate --format='Error: {{.State.Error}}'
+            
+            echo ""
+            echo "=== FULL LOGS ==="
+            docker logs test-sisyphusgate
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop test-sisyphusgate || true
+          docker rm test-sisyphusgate || true
