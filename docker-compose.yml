@@ -10,7 +10,6 @@ services:
     volumes:
       - ${SISYPHUSGATE_BASE:-.}/logs/sisyphusgate:/app/logs
       - ${SISYPHUSGATE_BASE:-.}/data:/app/data
-      - ${SISYPHUSGATE_BASE:-.}/logs/cowrie:/cowrie-logs:ro
     environment:
       - SISYPHUSGATE_CONFIG=/app/config/docker.yaml
       - SISYPHUSGATE_LOG_LEVEL=${SISYPHUSGATE_LOG_LEVEL:-INFO}
@@ -32,11 +31,7 @@ services:
     container_name: sisyphusgate-cowrie
     restart: unless-stopped
     volumes:
-      - ${SISYPHUSGATE_BASE:-.}/logs/cowrie:/cowrie/cowrie-git/var/log/cowrie
       - ${SISYPHUSGATE_BASE:-.}/config/cowrie/etc/cowrie.cfg:/cowrie/cowrie-git/etc/cowrie.cfg:ro
-    tmpfs:
-      - /tmp
-      - /cowrie/cowrie-git/var/lib/cowrie
     networks:
       - honeynet
     deploy:
