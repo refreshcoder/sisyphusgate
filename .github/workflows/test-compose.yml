@@ -52,12 +52,12 @@ jobs:
       - name: Create required directories
         run: |
           echo "=== Creating directories ==="
-          mkdir -p logs/sisyphusgate logs/cowrie data config/cowrie/etc
+          mkdir -p logs/sisyphusgate data config/cowrie/etc
           
           if [ ! -f config/cowrie/etc/cowrie.cfg ]; then
             echo "Creating cowrie.cfg..."
             # 使用 printf 而不是 heredoc 避免 YAML 冲突
-            printf '[ssh]\nlisten_endpoints = tcp:2222:interface=0.0.0.0\n\n[telnet]\nenabled = true\nlisten_endpoints = tcp:2223:interface=0.0.0.0\n\n[honeypot]\nhostname = web-server-prod\ndownload_limit_size = 0\n\n[output_jsonlog]\nenabled = true\nlogfile = /cowrie/cowrie-git/var/log/cowrie/cowrie.json\n' > config/cowrie/etc/cowrie.cfg
+            printf '[ssh]\nlisten_endpoints = tcp:2222:interface=0.0.0.0\n\n[telnet]\nenabled = true\nlisten_endpoints = tcp:2223:interface=0.0.0.0\n\n[honeypot]\nhostname = web-server-prod\ndownload_limit_size = 0\n\n[output_jsonlog]\nenabled = false\n' > config/cowrie/etc/cowrie.cfg
           fi
           
           echo "Directory structure:"
@@ -65,6 +65,16 @@ jobs:
           echo ""
           echo "cowrie.cfg content:"
           cat config/cowrie/etc/cowrie.cfg
+
+      - name: Ensure docker-compose.yml uses root user for cowrie
+        run: |
+          echo "=== Ensuring docker-compose.yml uses root user ==="
+          # 检查是否已经有 user: root，如果没有就添加
+          if ! grep -q "user: root" docker-compose.yml; then
+            sed -i '/volumes:/a \    user: root' docker-compose.yml
+          fi
+          echo "Final docker-compose.yml:"
+          cat docker-compose.yml
 
       - name: Start Docker Compose
         id: compose-start
