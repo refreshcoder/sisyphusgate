@@ -32,6 +32,10 @@ services:
     restart: unless-stopped
     volumes:
       - ${SISYPHUSGATE_BASE:-.}/config/cowrie/etc/cowrie.cfg:/cowrie/cowrie-git/etc/cowrie.cfg:ro
+    tmpfs:
+      - /tmp
+      - /cowrie/cowrie-git/var/lib/cowrie
+      - /cowrie/cowrie-git/var/log/cowrie
     networks:
       - honeynet
     deploy:

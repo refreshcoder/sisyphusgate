@@ -15,9 +15,9 @@ jobs:
 
       - name: Create directories and config
         run: |
-          mkdir -p logs/cowrie config/cowrie/etc
+          mkdir -p config/cowrie/etc
           if [ ! -f config/cowrie/etc/cowrie.cfg ]; then
-            printf '[ssh]\nlisten_endpoints = tcp:2222:interface=0.0.0.0\n\n[telnet]\nenabled = true\nlisten_endpoints = tcp:2223:interface=0.0.0.0\n\n[honeypot]\nhostname = web-server-prod\ndownload_limit_size = 0\n\n[output_jsonlog]\nenabled = true\nlogfile = /cowrie/cowrie-git/var/log/cowrie/cowrie.json\n' > config/cowrie/etc/cowrie.cfg
+            printf '[ssh]\nlisten_endpoints = tcp:2222:interface=0.0.0.0\n\n[telnet]\nenabled = true\nlisten_endpoints = tcp:2223:interface=0.0.0.0\n\n[honeypot]\nhostname = web-server-prod\ndownload_limit_size = 0\n\n[output_jsonlog]\nenabled = false\n\n[output_stdout]\nenabled = true\n' > config/cowrie/etc/cowrie.cfg
           fi
 
       - name: Start Cowrie container
@@ -26,10 +26,10 @@ jobs:
             --name test-cowrie \
             -p 2222:2222 \
             -p 2223:2223 \
-            -v $(pwd)/logs/cowrie:/cowrie/cowrie-git/var/log/cowrie \
             -v $(pwd)/config/cowrie/etc/cowrie.cfg:/cowrie/cowrie-git/etc/cowrie.cfg:ro \
             --tmpfs /tmp \
             --tmpfs /cowrie/cowrie-git/var/lib/cowrie \
+            --tmpfs /cowrie/cowrie-git/var/log/cowrie \
             cowrie/cowrie:latest
 
       - name: Wait for Cowrie to start
