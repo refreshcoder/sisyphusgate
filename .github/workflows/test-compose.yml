@@ -69,9 +69,11 @@ jobs:
       - name: Ensure docker-compose.yml uses root user for cowrie
         run: |
           echo "=== Ensuring docker-compose.yml uses root user ==="
-          # 检查是否已经有 user: root，如果没有就添加
-          if ! grep -q "user: root" docker-compose.yml; then
-            sed -i '/volumes:/a \    user: root' docker-compose.yml
+          # 检查 cowrie 服务是否已经有 user: root，如果没有就添加
+          if ! grep -A 10 "^  cowrie:" docker-compose.yml | grep -q "user: root"; then
+            sed -i '/cowrie:/,/^  [a-z]/{
+              /volumes:/a \    user: root
+            }' docker-compose.yml
           fi
           echo "Final docker-compose.yml:"
           cat docker-compose.yml
