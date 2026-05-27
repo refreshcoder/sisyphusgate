@@ -1,4 +1,16 @@
 services:
+  init:
+    image: busybox:latest
+    container_name: sisyphusgate-init
+    restart: "no"
+    volumes:
+      - ${SISYPHUSGATE_BASE:-.}/logs:/logs
+      - ${SISYPHUSGATE_BASE:-.}/data:/data
+    command: >
+      sh -c "mkdir -p /logs/sisyphusgate /logs/cowrie /data/cowrie
+      && chmod -R 777 /logs /data
+      && chown -R 65534:65534 /logs/cowrie /data/cowrie"
+
   sisyphusgate:
     image: ${SISYPHUSGATE_IMAGE:-ghcr.io/refreshcoder/sisyphusgate:latest}
     container_name: sisyphusgate
@@ -15,8 +27,12 @@ services:
       - SISYPHUSGATE_LOG_LEVEL=${SISYPHUSGATE_LOG_LEVEL:-INFO}
       - PYTHONUNBUFFERED=1
     depends_on:
-      - cowrie
-      - endlessh
+      init:
+        condition: service_completed_successfully
+      cowrie:
+        condition: service_started
+      endlessh:
+        condition: service_started
     networks:
       - default
       - honeynet
@@ -32,7 +48,11 @@ services:
     restart: unless-stopped
     volumes:
       - ${SISYPHUSGATE_BASE:-.}/config/cowrie/etc/cowrie.cfg:/cowrie/cowrie-git/etc/cowrie.cfg:ro
-    user: root
+      - ${SISYPHUSGATE_BASE:-.}/logs/cowrie:/cowrie/cowrie-git/var/log/cowrie
+      - ${SISYPHUSGATE_BASE:-.}/data/cowrie:/cowrie/cowrie-git/var/lib/cowrie
+    depends_on:
+      init:
+        condition: service_completed_successfully
     networks:
       - honeynet
     deploy:
@@ -45,9 +65,14 @@ services:
     image: shizunge/endlessh-go:latest
     container_name: sisyphusgate-endlessh
     restart: unless-stopped
-    environment:
-      - ENDLESSH_DELAY=${TARPIT_DELAY_MS:-10000}
-      - ENDLESSH_MAX_CLIENTS=${TARPIT_MAX_CLIENTS:-4096}
+    ports:
+      - "2221:2221"
+    command:
+      - "-port=2221"
+      - "-interval_ms=${TARPIT_DELAY_MS:-10000}"
+      - "-max_clients=${TARPIT_MAX_CLIENTS:-4096}"
+      - "-logtostderr"
+      - "-v=1"
     networks:
       - honeynet
     deploy:
